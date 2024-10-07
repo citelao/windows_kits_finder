@@ -1,4 +1,5 @@
 use clap::Parser;
+use colored::*;
 
 mod kits;
 
@@ -33,7 +34,8 @@ fn main() {
     if !tool_path.exists() {
         if args.allow_missing {
             // Write a warning to stderr
-            eprintln!("Warning: tool not found: {}", tool_path.display());
+            let warning = format!("Warning: tool not found: {}", tool_path.display());
+            eprintln!("{}", warning.yellow());
         } else {
             eprintln!("Error: tool not found: {}", tool_path.display());
             std::process::exit(1);
