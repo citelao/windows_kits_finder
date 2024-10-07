@@ -3,7 +3,7 @@ use clap::Parser;
 mod kits;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[command(version, about)]
 struct Args
 {
     // TODO: well-known bins?
@@ -15,6 +15,9 @@ struct Args
     kit_version: Option<String>,
 
     // TODO: list all kits?
+
+    #[arg(long)]
+    allow_missing: bool,
 }
 
 fn main() {
@@ -28,8 +31,13 @@ fn main() {
 
     // If the tool doesn't exist, print an error message and exit
     if !tool_path.exists() {
-        eprintln!("Error: tool not found: {}", tool_path.display());
-        std::process::exit(1);
+        if args.allow_missing {
+            // Write a warning to stderr
+            eprintln!("Warning: tool not found: {}", tool_path.display());
+        } else {
+            eprintln!("Error: tool not found: {}", tool_path.display());
+            std::process::exit(1);
+        }
     }
 
     // Print the path to the tool
