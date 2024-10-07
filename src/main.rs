@@ -37,7 +37,8 @@ fn main() {
             let warning = format!("Warning: tool not found: {}", tool_path.display());
             eprintln!("{}", warning.yellow());
         } else {
-            eprintln!("Error: tool not found: {}", tool_path.display());
+            let error = format!("{}: tool not found: {}", "Error".bold(), tool_path.display());
+            eprintln!("{}", error.red());
             std::process::exit(1);
         }
     }
