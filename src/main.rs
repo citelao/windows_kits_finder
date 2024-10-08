@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{builder::PossibleValue, Args, Parser, ValueEnum};
 use colored::*;
 use kits::get_kit_dir;
 use thiserror::Error;
@@ -6,13 +6,16 @@ use thiserror::Error;
 mod kits;
 
 #[derive(Parser, Debug)]
-#[command(version, about)]
-struct Args
+#[command(name = "Kits Tool")]
+#[command(version = "0.1")]
+#[command(about = "Find binaries from Windows Kits", long_about = None)]
+struct CliArgs
 {
-    // TODO: well-known bins?
-    binary: String,
+    #[command(flatten)]
+    binary: BinaryArg,
 
     // TODO: well-known archs?
+    #[arg(long)]
     architecture: Option<String>,
 
     #[arg(long)]
@@ -26,6 +29,61 @@ struct Args
     #[arg(long)]
     kit_dir: Option<String>,
 }
+
+#[derive(Args, Debug)]
+#[group(required = true, multiple = false)]
+struct BinaryArg {
+    #[arg(value_enum)]
+    binary: Option<KnownBinary>,
+
+    #[arg(long)]
+    custom_path: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum KnownBinary {
+    Accevent,
+    Inspect,
+
+    Custom(String),
+}
+
+impl KnownBinary {
+    fn to_string(&self) -> String {
+        match self {
+            KnownBinary::Accevent => "accevent.exe".to_string(),
+            KnownBinary::Inspect => "inspect.exe".to_string(),
+            KnownBinary::Custom(s) => s.clone(),
+        }
+    }
+
+    fn get_subdir(&self) -> String {
+        match self {
+            KnownBinary::Accevent => "accevent.exe".to_string(),
+            KnownBinary::Inspect => "inspect.exe".to_string(),
+            KnownBinary::Custom(s) => s.clone(),
+        }
+    }
+}
+
+impl ValueEnum for KnownBinary {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            KnownBinary::Accevent,
+            KnownBinary::Inspect,
+        ]
+    }
+    
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            KnownBinary::Accevent => Some(PossibleValue::new( "accevent")),
+            KnownBinary::Inspect => Some(PossibleValue::new( "inspect")),
+            _ => None,
+        }
+    }
+
+}
+
 
 #[derive(Error, Debug, PartialEq)]
 pub enum OurError {
@@ -48,7 +106,7 @@ pub enum OurError {
     // Unknown,
 }
 
-fn do_it(args: Args) -> Result<(), OurError> {
+fn do_it(args: CliArgs) -> Result<(), OurError> {
     let architecture = args.architecture.unwrap_or("x64".to_string());
 
     let kit_dir_to_use = args.kit_dir.map_or_else(|| get_kit_dir(), |dir| std::path::PathBuf::from(dir));
@@ -66,7 +124,11 @@ fn do_it(args: Args) -> Result<(), OurError> {
         bin_dirs.last().unwrap()
     };
 
-    let tool_path = bin_dir_to_use.join(architecture).join(args.binary.clone());
+    let binary = match args.binary.binary {
+        Some(k) => k,
+        None => KnownBinary::Custom(args.binary.custom_path.unwrap()),
+    };
+    let tool_path = bin_dir_to_use.join(architecture).join(binary.get_subdir());
 
     // If the tool doesn't exist, print an error message and exit
     if !tool_path.exists() {
@@ -75,7 +137,7 @@ fn do_it(args: Args) -> Result<(), OurError> {
             let warning = format!("Warning: tool not found: {}", tool_path.display());
             eprintln!("{}", warning.yellow());
         } else {
-            return Err(OurError::ToolNotFound(args.binary));
+            return Err(OurError::ToolNotFound(binary.to_string()));
         }
     }
 
@@ -85,7 +147,7 @@ fn do_it(args: Args) -> Result<(), OurError> {
 }
 
 fn main() {
-    let args = Args::parse();
+    let args = CliArgs::parse();
     match do_it(args) {
         Ok(_) => std::process::exit(0),
         Err(e) => {
