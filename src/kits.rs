@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::env;
 
 pub fn get_kit_dir() -> PathBuf {
+    // TODO: does this need to have special handling if in a 32-bit environment?
     let program_files_x86 = env::var("ProgramFiles(x86)").unwrap();
     let base_path = PathBuf::from(program_files_x86).join("Windows Kits");
     base_path
