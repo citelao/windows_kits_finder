@@ -153,6 +153,19 @@ mod tests {
         let result = do_it(args);
         assert!(result.is_err());
         assert!(result.unwrap_err() == OurError::ToolNotFound("afakeexe.exe".to_string()));
+
+        // Test with allow_missing
+        let args = Args {
+            binary: "afakeexe.exe".to_string(),
+            architecture: Some("x64".to_string()),
+            kit_version: None,
+            allow_missing: true,
+            kit_dir: Some(temp_kit_dir.path().to_str().unwrap().to_string()),
+        };
+
+        let result = do_it(args);
+        assert!(result.is_ok());
+        assert!(result.unwrap() == ());
     }
 
     #[test]
