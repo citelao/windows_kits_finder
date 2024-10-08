@@ -74,3 +74,22 @@ fn main() {
     let result = do_it(args);
     result.unwrap();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let args = Args {
+            binary: "accevent.exe".to_string(),
+            architecture: Some("x64".to_string()),
+            kit_version: None,
+            allow_missing: false,
+            kit_dir: None,
+        };
+
+        let result = do_it(args);
+        assert!(result.is_ok());
+    }
+}
