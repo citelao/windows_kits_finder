@@ -1,14 +1,13 @@
 use std::path::PathBuf;
 use std::env;
 
-fn get_kit_dir() -> PathBuf {
+pub fn get_kit_dir() -> PathBuf {
     let program_files_x86 = env::var("ProgramFiles(x86)").unwrap();
     let base_path = PathBuf::from(program_files_x86).join("Windows Kits");
     base_path
 }
 
-pub fn get_kit_bin_dirs() -> Vec<PathBuf> {
-    let kit_dir = get_kit_dir();
+pub fn get_kit_bin_dirs(kit_dir: PathBuf) -> Vec<PathBuf> {
     let bin_dir = kit_dir.join("10").join("bin");
 
     // List all the directories in the bin directory

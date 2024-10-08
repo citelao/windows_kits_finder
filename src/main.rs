@@ -1,5 +1,8 @@
+use std::error::Error;
+
 use clap::Parser;
 use colored::*;
+use kits::get_kit_dir;
 
 mod kits;
 
@@ -20,13 +23,16 @@ struct Args
 
     #[arg(long)]
     allow_missing: bool,
+
+    #[arg(long)]
+    kit_dir: Option<String>,
 }
 
-fn main() {
-    let args = Args::parse();
+fn do_it(args: Args) -> Result<(), Box<dyn Error>> {
     let architecture = args.architecture.unwrap_or("x64".to_string());
 
-    let bin_dirs = kits::get_kit_bin_dirs();
+    let kit_dir_to_use = args.kit_dir.map_or_else(|| get_kit_dir(), |dir| std::path::PathBuf::from(dir));
+    let bin_dirs = kits::get_kit_bin_dirs(kit_dir_to_use);
 
     let bin_dir_to_use = if let Some(kit_version) = args.kit_version {
         if let Some(found_dir) = bin_dirs.iter().find(|dir| dir.file_name().unwrap().to_str().unwrap() == kit_version) {
@@ -60,4 +66,11 @@ fn main() {
 
     // Print the path to the tool
     println!("{}", tool_path.display());
+    Ok(())
+}
+
+fn main() {
+    let args = Args::parse();
+    let result = do_it(args);
+    result.unwrap();
 }
