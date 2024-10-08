@@ -76,8 +76,8 @@ impl ValueEnum for KnownBinary {
     
     fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
         match self {
-            KnownBinary::Accevent => Some(PossibleValue::new( "accevent")),
-            KnownBinary::Inspect => Some(PossibleValue::new( "inspect")),
+            KnownBinary::Accevent => Some(PossibleValue::new("accevent")),
+            KnownBinary::Inspect => Some(PossibleValue::new("inspect")),
             _ => None,
         }
     }
