@@ -4,7 +4,7 @@ A simple tool to find binaries in Windows Kits, since it's a bit annoying.
 
 ## TODO
 
-* [ ] License
+* [X] License
 * [ ] Support includes & libs etc
 * [ ] List available kits
 * [ ] Get the base path
