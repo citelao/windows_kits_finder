@@ -7,3 +7,6 @@ edition = "2021"
 clap = { version = "4.5.19", features = ["derive"] }
 colored = "2.1.0"
 thiserror = "1.0.64"
+
+[dev-dependencies]
+assert_fs = "1.1.2"

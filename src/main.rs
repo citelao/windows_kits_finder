@@ -29,7 +29,7 @@ struct Args
     kit_dir: Option<String>,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum OurError {
     #[error("kit version not found: {desired} (maybe you want {potential}?)")]
     BinDirNotFound{ desired: String, potential: String },
@@ -104,15 +104,56 @@ mod tests {
 
     #[test]
     fn it_works() {
+        // - kit
+        //     - 10
+        //         - bin
+        //             - 10.0.19041.0
+        //             - 10.0.22000.0
+        //                 - x64
+        //                     - accevent.exe
+        let temp_kit_dir = assert_fs::TempDir::new().unwrap();
+        let bin_dir = temp_kit_dir.join("10").join("bin");
+        std::fs::create_dir_all(bin_dir.join("10.0.19041.0")).unwrap();
+        std::fs::create_dir_all(bin_dir.join("10.0.22000.0").join("x64")).unwrap();
+        std::fs::write(bin_dir.join("10.0.22000.0").join("x64").join("accevent.exe"), "").unwrap();
+
         let args = Args {
             binary: "accevent.exe".to_string(),
             architecture: Some("x64".to_string()),
             kit_version: None,
             allow_missing: false,
-            kit_dir: None,
+            kit_dir: Some(temp_kit_dir.path().to_str().unwrap().to_string()),
         };
 
         let result = do_it(args);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_tool_not_found() {
+        // - kit
+        //     - 10
+        //         - bin
+        //             - 10.0.19041.0
+        //             - 10.0.22000.0
+        //                 - x64
+        //                     - accevent.exe
+        let temp_kit_dir = assert_fs::TempDir::new().unwrap();
+        let bin_dir = temp_kit_dir.join("10").join("bin");
+        std::fs::create_dir_all(bin_dir.join("10.0.19041.0")).unwrap();
+        std::fs::create_dir_all(bin_dir.join("10.0.22000.0").join("x64")).unwrap();
+        std::fs::write(bin_dir.join("10.0.22000.0").join("x64").join("accevent.exe"), "").unwrap();
+
+        let args = Args {
+            binary: "afakeexe.exe".to_string(),
+            architecture: Some("x64".to_string()),
+            kit_version: None,
+            allow_missing: false,
+            kit_dir: Some(temp_kit_dir.path().to_str().unwrap().to_string()),
+        };
+
+        let result = do_it(args);
+        assert!(result.is_err());
+        assert!(result.unwrap_err() == OurError::ToolNotFound("afakeexe.exe".to_string()));
     }
 }
