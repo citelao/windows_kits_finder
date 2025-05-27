@@ -21,8 +21,6 @@ struct CliArgs
     #[arg(long)]
     kit_version: Option<String>,
 
-    // TODO: list all kits?
-
     #[arg(long)]
     allow_missing: bool,
 
@@ -140,21 +138,27 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
 
     match args.command {
         Commands::List => {
-            // Write all bin_dirs
-            for bin_dir in &bin_dirs {
-                println!("{}", bin_dir.display());
-
-                // List all archs
-                if let Ok(entries) = std::fs::read_dir(bin_dir) {
-                    for entry in entries.flatten() {
-                        if entry.file_type().map_or(false, |ft| ft.is_dir()) {
-                            println!("  - {}", entry.file_name().to_string_lossy());
-                        }
-                    }
-                } else {
-                    eprintln!("Could not read directory: {}", bin_dir.display());
-                }
+            // Write all bin_dirs in reverse order
+            println!("Available Windows Kits:");
+            for bin_dir in bin_dirs.iter().rev() {
+                let kit_name = bin_dir.file_name().unwrap().to_string_lossy();
+                let is_default = if bin_dir == bin_dir_to_use { "(default)".to_string() } else { "".to_string() };
+                println!(" - {} {}", kit_name, is_default);
             }
+
+            // for bin_dir in &bin_dirs {
+
+            //     // List all archs
+            //     if let Ok(entries) = std::fs::read_dir(bin_dir) {
+            //         for entry in entries.flatten() {
+            //             if entry.file_type().map_or(false, |ft| ft.is_dir()) {
+            //                 println!("  - {}", entry.file_name().to_string_lossy());
+            //             }
+            //         }
+            //     } else {
+            //         eprintln!("Could not read directory: {}", bin_dir.display());
+            //     }
+            // }
         },
         Commands::Tool { subargs } => {
             let binary = match subargs.binary {
