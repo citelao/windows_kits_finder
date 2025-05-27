@@ -15,8 +15,8 @@ struct CliArgs
     command: Commands,
 
     // TODO: well-known archs?
-    #[arg(long)]
-    architecture: Option<String>,
+    #[arg(value_enum)]
+    architecture: Option<KnownArchitecture>,
 
     #[arg(long)]
     kit_version: Option<String>,
@@ -49,6 +49,48 @@ struct BinaryArg {
 
     #[arg(long)]
     custom_path: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum KnownArchitecture {
+    X64,
+    X86,
+    Arm,
+    Arm64,
+    Custom(String),
+}
+
+impl KnownArchitecture {
+    fn to_string(&self) -> String {
+        match self {
+            KnownArchitecture::X64 => "x64".to_string(),
+            KnownArchitecture::X86 => "x86".to_string(),
+            KnownArchitecture::Arm => "arm".to_string(),
+            KnownArchitecture::Arm64 => "arm64".to_string(),
+            KnownArchitecture::Custom(s) => s.clone(),
+        }
+    }
+}
+
+impl ValueEnum for KnownArchitecture {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            KnownArchitecture::X64,
+            KnownArchitecture::X86,
+            KnownArchitecture::Arm,
+            KnownArchitecture::Arm64,
+        ]
+    }
+    
+    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
+        match self {
+            KnownArchitecture::X64 => Some(PossibleValue::new("x64")),
+            KnownArchitecture::X86 => Some(PossibleValue::new("x86")),
+            KnownArchitecture::Arm => Some(PossibleValue::new("arm")),
+            KnownArchitecture::Arm64 => Some(PossibleValue::new("arm64")),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -121,7 +163,7 @@ pub enum OurError {
 }
 
 fn do_it(args: CliArgs) -> Result<(), OurError> {
-    let architecture = args.architecture.unwrap_or("x64".to_string());
+    let architecture = args.architecture.unwrap_or(KnownArchitecture::X64);
 
     let kit_dir_to_use = args.kit_dir.map_or_else(|| get_kit_dir(), |dir| std::path::PathBuf::from(dir));
     let bin_dirs = kits::get_kit_bin_dirs(kit_dir_to_use);
@@ -140,14 +182,28 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
 
     match args.command {
         Commands::List => {
-            return Err(OurError::NotImplemented("list command is not implemented yet".to_string()));
+            // Write all bin_dirs
+            for bin_dir in &bin_dirs {
+                println!("{}", bin_dir.display());
+
+                // List all archs
+                if let Ok(entries) = std::fs::read_dir(bin_dir) {
+                    for entry in entries.flatten() {
+                        if entry.file_type().map_or(false, |ft| ft.is_dir()) {
+                            println!("  - {}", entry.file_name().to_string_lossy());
+                        }
+                    }
+                } else {
+                    eprintln!("Could not read directory: {}", bin_dir.display());
+                }
+            }
         },
         Commands::Tool { subargs } => {
             let binary = match subargs.binary {
                 Some(k) => k,
                 None => KnownBinary::Custom(subargs.custom_path.unwrap()),
             };
-            let tool_path = bin_dir_to_use.join(architecture).join(binary.get_subdir());
+            let tool_path = bin_dir_to_use.join(architecture.to_string()).join(binary.get_subdir());
         
             // If the tool doesn't exist, print an error message and exit
             if !tool_path.exists() {
