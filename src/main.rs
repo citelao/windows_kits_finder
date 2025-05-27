@@ -142,7 +142,7 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
             println!("Available Windows Kits:");
             for bin_dir in bin_dirs.iter().rev() {
                 let kit_name = bin_dir.file_name().unwrap().to_string_lossy();
-                let is_default = if bin_dir == bin_dir_to_use { "(default)".to_string() } else { "".to_string() };
+                let is_default = if bin_dir == bin_dir_to_use { "(default)".to_string().dimmed() } else { "".to_string().into() };
                 println!(" - {} {}", kit_name, is_default);
             }
 
