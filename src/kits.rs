@@ -66,4 +66,26 @@ mod tests {
         assert_eq!(bin_dirs[0].file_name().unwrap(), "10.0.19041.0");
         assert_eq!(bin_dirs[1].file_name().unwrap(), "10.0.22000.0");
     }
+
+    #[test]
+    fn test_ignores_bad_paths() {
+        // - kit
+        //     - 10
+        //         - bin
+        //             - arm
+        //             - arm64
+        //             - x64
+        //             - x86
+        let temp_kit_dir = assert_fs::TempDir::new().unwrap();
+        let bin_dir = temp_kit_dir.join("10").join("bin");
+        std::fs::create_dir_all(bin_dir.join("arm")).unwrap();
+        std::fs::create_dir_all(bin_dir.join("arm64")).unwrap();
+        std::fs::create_dir_all(bin_dir.join("x64")).unwrap();
+        std::fs::create_dir_all(bin_dir.join("x86")).unwrap();
+        
+        let bin_dirs = get_kit_bin_dirs(temp_kit_dir.path().to_path_buf());
+        
+        // We expect no directories, since all are bad paths.
+        assert!(bin_dirs.is_empty());
+    }
 }
