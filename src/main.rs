@@ -34,6 +34,10 @@ enum Commands
     Tool {
         #[command(flatten)]
         subargs: BinaryArg,
+
+        // Start the tool?
+        #[arg(long)]
+        run: bool,
     },
 
     // List all available Windows Kits
@@ -157,7 +161,7 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
                 println!(" - {} {}", kit_name, is_default);
             }
         },
-        Commands::Tool { subargs } => {
+        Commands::Tool { subargs, run } => {
             if subargs.list {
                 // List all known binaries
                 println!("Known tools:");
@@ -183,6 +187,19 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
                 } else {
                     return Err(OurError::ToolNotFound(binary.to_string()));
                 }
+            }
+
+            if run {
+                // If the tool exists, run it
+                let status = std::process::Command::new(&tool_path)
+                    .status()
+                    .expect("Failed to execute command");
+                
+                if !status.success() {
+                    return Err(OurError::ToolNotFound(binary.to_string()));
+                }
+
+                return Ok(());
             }
         
             // Print the path to the tool
