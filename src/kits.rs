@@ -82,9 +82,9 @@ mod tests {
         std::fs::create_dir_all(bin_dir.join("arm64")).unwrap();
         std::fs::create_dir_all(bin_dir.join("x64")).unwrap();
         std::fs::create_dir_all(bin_dir.join("x86")).unwrap();
-        
+
         let bin_dirs = get_kit_bin_dirs(temp_kit_dir.path().to_path_buf());
-        
+
         // We expect no directories, since all are bad paths.
         assert!(bin_dirs.is_empty());
     }
