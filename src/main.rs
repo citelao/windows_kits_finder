@@ -117,6 +117,9 @@ pub enum OurError {
     #[error("tool not found: {0}")]
     ToolNotFound(String),
 
+    #[error("tool failed: {0} - {1}")]
+    ToolFailed(String, String),
+
     #[error("`{0}` is not implemented yet")]
     NotImplemented(String),
 
@@ -192,11 +195,17 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
             if run {
                 // If the tool exists, run it
                 let status = std::process::Command::new(&tool_path)
-                    .status()
-                    .expect("Failed to execute command");
-                
-                if !status.success() {
-                    return Err(OurError::ToolNotFound(binary.to_string()));
+                    .status();
+
+                match status {
+                    Ok(s) => {
+                        if !s.success() {
+                            return Err(OurError::ToolFailed(binary.to_string(), format!("Process exited with status: {}", s)));
+                        }
+                    }
+                    Err(e) => {
+                        return Err(OurError::ToolFailed(binary.to_string(), e.to_string()));
+                    }
                 }
 
                 return Ok(());
