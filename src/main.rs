@@ -36,7 +36,8 @@ enum Commands
         subargs: BinaryArg,
     },
 
-    List,
+    // List all available Windows Kits
+    Kits,
 }
 
 #[derive(Args, Debug)]
@@ -47,12 +48,18 @@ struct BinaryArg {
 
     #[arg(long)]
     custom_path: Option<String>,
+
+    // Just list all known binaries
+    #[arg(long)]
+    list: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 enum KnownBinary {
     Accevent,
     Inspect,
+
+    MakePri,
 
     Custom(String),
 }
@@ -62,6 +69,7 @@ impl KnownBinary {
         match self {
             KnownBinary::Accevent => "accevent.exe".to_string(),
             KnownBinary::Inspect => "inspect.exe".to_string(),
+            KnownBinary::MakePri => "makepri.exe".to_string(),
             KnownBinary::Custom(s) => s.clone(),
         }
     }
@@ -70,6 +78,7 @@ impl KnownBinary {
         match self {
             KnownBinary::Accevent => "accevent.exe".to_string(),
             KnownBinary::Inspect => "inspect.exe".to_string(),
+            KnownBinary::MakePri => "makepri.exe".to_string(),
             KnownBinary::Custom(s) => s.clone(),
         }
     }
@@ -80,6 +89,7 @@ impl ValueEnum for KnownBinary {
         &[
             KnownBinary::Accevent,
             KnownBinary::Inspect,
+            KnownBinary::MakePri,
         ]
     }
     
@@ -87,6 +97,7 @@ impl ValueEnum for KnownBinary {
         match self {
             KnownBinary::Accevent => Some(PossibleValue::new("accevent")),
             KnownBinary::Inspect => Some(PossibleValue::new("inspect")),
+            KnownBinary::MakePri => Some(PossibleValue::new("makepri")),
             _ => None,
         }
     }
@@ -137,7 +148,7 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
     };
 
     match args.command {
-        Commands::List => {
+        Commands::Kits => {
             // Write all bin_dirs in reverse order
             println!("Available Windows Kits:");
             for bin_dir in bin_dirs.iter().rev() {
@@ -145,22 +156,18 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
                 let is_default = if bin_dir == bin_dir_to_use { "(default)".to_string().dimmed() } else { "".to_string().into() };
                 println!(" - {} {}", kit_name, is_default);
             }
-
-            // for bin_dir in &bin_dirs {
-
-            //     // List all archs
-            //     if let Ok(entries) = std::fs::read_dir(bin_dir) {
-            //         for entry in entries.flatten() {
-            //             if entry.file_type().map_or(false, |ft| ft.is_dir()) {
-            //                 println!("  - {}", entry.file_name().to_string_lossy());
-            //             }
-            //         }
-            //     } else {
-            //         eprintln!("Could not read directory: {}", bin_dir.display());
-            //     }
-            // }
         },
         Commands::Tool { subargs } => {
+            if subargs.list {
+                // List all known binaries
+                println!("Known tools:");
+                for binary in KnownBinary::value_variants() {
+                    println!(" - {}", binary.to_possible_value().unwrap().get_name());
+                }
+                println!(" - {}", "custom (use --custom-path to specify a path)".dimmed());
+                return Ok(());
+            }
+
             let binary = match subargs.binary {
                 Some(k) => k,
                 None => KnownBinary::Custom(subargs.custom_path.unwrap()),
