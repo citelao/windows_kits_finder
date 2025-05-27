@@ -16,10 +16,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Rust (stable)
-      uses: actions/setup-rust@v1
-      with:
-        rust-version: stable
     - name: Check formatting
       run: cargo fmt --all -- --check
     - name: Clippy lint
