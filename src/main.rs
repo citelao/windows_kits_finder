@@ -16,7 +16,7 @@ struct CliArgs
 
     // TODO: well-known archs?
     #[arg(long, default_value = "x64")]
-    architecture: Option<KnownArchitecture>,
+    architecture: KnownArchitecture,
 
     #[arg(long)]
     kit_version: Option<String>,
@@ -163,7 +163,7 @@ pub enum OurError {
 }
 
 fn do_it(args: CliArgs) -> Result<(), OurError> {
-    let architecture = args.architecture.unwrap_or(KnownArchitecture::X64);
+    let architecture = args.architecture;
 
     let kit_dir_to_use = args.kit_dir.map_or_else(|| get_kit_dir(), |dir| std::path::PathBuf::from(dir));
     let bin_dirs = kits::get_kit_bin_dirs(kit_dir_to_use);
