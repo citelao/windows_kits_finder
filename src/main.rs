@@ -251,11 +251,19 @@ mod tests {
         std::fs::create_dir_all(bin_dir.join("10.0.22000.0").join("x64")).unwrap();
         std::fs::write(bin_dir.join("10.0.22000.0").join("x64").join("accevent.exe"), "").unwrap();
 
-        let args = Args {
-            binary: "accevent.exe".to_string(),
+        let args = CliArgs {
+            command: Commands::Tool {
+                subargs: BinaryArg {
+                    binary: Some(KnownBinary::Accevent),
+                    custom_path: None,
+                    list: false,
+                },
+                run: false,
+                allow_missing: false,
+            },
+
             architecture: Some("x64".to_string()),
             kit_version: None,
-            allow_missing: false,
             kit_dir: Some(temp_kit_dir.path().to_str().unwrap().to_string()),
         };
 
@@ -278,24 +286,38 @@ mod tests {
         std::fs::create_dir_all(bin_dir.join("10.0.22000.0").join("x64")).unwrap();
         std::fs::write(bin_dir.join("10.0.22000.0").join("x64").join("accevent.exe"), "").unwrap();
 
-        let args = Args {
-            binary: "afakeexe.exe".to_string(),
+        let args = CliArgs {
+            command: Commands::Tool {
+                subargs: BinaryArg {
+                    binary: None,
+                    custom_path: "afakeexe.exe".to_string().into(),
+                    list: false,
+                },
+                run: false,
+                allow_missing: false,
+            },
             architecture: Some("x64".to_string()),
             kit_version: None,
-            allow_missing: false,
             kit_dir: Some(temp_kit_dir.path().to_str().unwrap().to_string()),
         };
 
         let result = do_it(args);
         assert!(result.is_err());
-        assert!(result.unwrap_err() == OurError::ToolNotFound("afakeexe.exe".to_string(), "path/to/afakeexe.exe".to_string()));
+        assert!(result.unwrap_err() == OurError::ToolNotFound("afakeexe.exe".to_string(), bin_dir.join("10.0.22000.0").join("x64").join("afakeexe.exe").display().to_string()));
 
         // Test with allow_missing
-        let args = Args {
-            binary: "afakeexe.exe".to_string(),
+        let args = CliArgs {
+            command: Commands::Tool {
+                subargs: BinaryArg {
+                    binary: Some(KnownBinary::Accevent),
+                    custom_path: None,
+                    list: false,
+                },
+                run: false,
+                allow_missing: true,
+            },
             architecture: Some("x64".to_string()),
             kit_version: None,
-            allow_missing: true,
             kit_dir: Some(temp_kit_dir.path().to_str().unwrap().to_string()),
         };
 
@@ -319,11 +341,18 @@ mod tests {
         std::fs::create_dir_all(bin_dir.join("10.0.22000.0").join("x64")).unwrap();
         std::fs::write(bin_dir.join("10.0.22000.0").join("x64").join("accevent.exe"), "").unwrap();
 
-        let args = Args {
-            binary: "accevent.exe".to_string(),
+        let args = CliArgs {
+            command: Commands::Tool {
+                subargs: BinaryArg {
+                    binary: Some(KnownBinary::Accevent),
+                    custom_path: None,
+                    list: false,
+                },
+                run: false,
+                allow_missing: false,
+            },
             architecture: Some("x64".to_string()),
             kit_version: Some("10.0.12345.0".to_string()),
-            allow_missing: false,
             kit_dir: Some(temp_kit_dir.path().to_str().unwrap().to_string()),
         };
 
