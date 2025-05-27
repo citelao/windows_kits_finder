@@ -35,4 +35,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: vsto-${{ matrix.BUILD_TARGET }}
-        path: target/${{ matrix.BUILD_TARGET }}/release
+        path: target/${{ matrix.BUILD_TARGET }}
