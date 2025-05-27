@@ -309,8 +309,8 @@ mod tests {
         let args = CliArgs {
             command: Commands::Tool {
                 subargs: BinaryArg {
-                    binary: Some(KnownBinary::Accevent),
-                    custom_path: None,
+                    binary: None,
+                    custom_path: "afakeexe.exe".to_string().into(),
                     list: false,
                 },
                 run: false,
