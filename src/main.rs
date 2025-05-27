@@ -1,4 +1,4 @@
-use clap::{builder::PossibleValue, Args, Parser, ValueEnum};
+use clap::{builder::PossibleValue, Args, Parser, Subcommand, ValueEnum};
 use colored::*;
 use kits::get_kit_dir;
 use thiserror::Error;
@@ -11,8 +11,8 @@ mod kits;
 #[command(about = "Find binaries from Windows Kits", long_about = None)]
 struct CliArgs
 {
-    #[command(flatten)]
-    binary: BinaryArg,
+    #[command(subcommand)]
+    command: Commands,
 
     // TODO: well-known archs?
     #[arg(long)]
@@ -28,6 +28,17 @@ struct CliArgs
 
     #[arg(long)]
     kit_dir: Option<String>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands
+{
+    Tool {
+        #[command(flatten)]
+        subargs: BinaryArg,
+    },
+
+    List,
 }
 
 #[derive(Args, Debug)]
@@ -93,6 +104,9 @@ pub enum OurError {
     #[error("tool not found: {0}")]
     ToolNotFound(String),
 
+    #[error("`{0}` is not implemented yet")]
+    NotImplemented(String),
+
     // #[error("data store disconnected")]
     // Disconnect(#[from] io::Error),
     // #[error("the data for key `{0}` is not available")]
@@ -124,25 +138,33 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
         bin_dirs.last().unwrap()
     };
 
-    let binary = match args.binary.binary {
-        Some(k) => k,
-        None => KnownBinary::Custom(args.binary.custom_path.unwrap()),
-    };
-    let tool_path = bin_dir_to_use.join(architecture).join(binary.get_subdir());
-
-    // If the tool doesn't exist, print an error message and exit
-    if !tool_path.exists() {
-        if args.allow_missing {
-            // Write a warning to stderr
-            let warning = format!("Warning: tool not found: {}", tool_path.display());
-            eprintln!("{}", warning.yellow());
-        } else {
-            return Err(OurError::ToolNotFound(binary.to_string()));
-        }
+    match args.command {
+        Commands::List => {
+            return Err(OurError::NotImplemented("list command is not implemented yet".to_string()));
+        },
+        Commands::Tool { subargs } => {
+            let binary = match subargs.binary {
+                Some(k) => k,
+                None => KnownBinary::Custom(subargs.custom_path.unwrap()),
+            };
+            let tool_path = bin_dir_to_use.join(architecture).join(binary.get_subdir());
+        
+            // If the tool doesn't exist, print an error message and exit
+            if !tool_path.exists() {
+                if args.allow_missing {
+                    // Write a warning to stderr
+                    let warning = format!("Warning: tool not found: {}", tool_path.display());
+                    eprintln!("{}", warning.yellow());
+                } else {
+                    return Err(OurError::ToolNotFound(binary.to_string()));
+                }
+            }
+        
+            // Print the path to the tool
+            println!("{}", tool_path.display());
+        },
     }
-
-    // Print the path to the tool
-    println!("{}", tool_path.display());
+    
     Ok(())
 }
 
