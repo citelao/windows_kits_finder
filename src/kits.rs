@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 
 pub fn get_kit_dir() -> PathBuf {
     // TODO: does this need to have special handling if in a 32-bit environment?
