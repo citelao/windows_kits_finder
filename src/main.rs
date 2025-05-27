@@ -15,7 +15,7 @@ struct CliArgs
     command: Commands,
 
     // TODO: well-known archs?
-    #[arg(value_enum)]
+    #[arg(long, default_value = "x64")]
     architecture: Option<KnownArchitecture>,
 
     #[arg(long)]
