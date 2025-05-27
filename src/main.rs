@@ -22,9 +22,6 @@ struct CliArgs
     kit_version: Option<String>,
 
     #[arg(long)]
-    allow_missing: bool,
-
-    #[arg(long)]
     kit_dir: Option<String>,
 }
 
@@ -38,6 +35,10 @@ enum Commands
         // Start the tool?
         #[arg(long)]
         run: bool,
+
+        // Allow missing tools (don't error out if the tool is not found)
+        #[arg(long)]
+        allow_missing: bool,
     },
 
     // List all available Windows Kits
@@ -114,8 +115,8 @@ pub enum OurError {
     #[error("kit version not found: {desired} (maybe you want {potential}?)")]
     BinDirNotFound{ desired: String, potential: String },
 
-    #[error("tool not found: {0}")]
-    ToolNotFound(String),
+    #[error("tool not found: {0} ({1})")]
+    ToolNotFound(String, String),
 
     #[error("tool failed: {0} - {1}")]
     ToolFailed(String, String),
@@ -164,7 +165,7 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
                 println!(" - {} {}", kit_name, is_default);
             }
         },
-        Commands::Tool { subargs, run } => {
+        Commands::Tool { subargs, run, allow_missing } => {
             if subargs.list {
                 // List all known binaries
                 println!("Known tools:");
@@ -183,12 +184,12 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
         
             // If the tool doesn't exist, print an error message and exit
             if !tool_path.exists() {
-                if args.allow_missing {
+                if allow_missing {
                     // Write a warning to stderr
                     let warning = format!("Warning: tool not found: {}", tool_path.display());
                     eprintln!("{}", warning.yellow());
                 } else {
-                    return Err(OurError::ToolNotFound(binary.to_string()));
+                    return Err(OurError::ToolNotFound(binary.to_string(), tool_path.display().to_string()));
                 }
             }
 
@@ -287,7 +288,7 @@ mod tests {
 
         let result = do_it(args);
         assert!(result.is_err());
-        assert!(result.unwrap_err() == OurError::ToolNotFound("afakeexe.exe".to_string()));
+        assert!(result.unwrap_err() == OurError::ToolNotFound("afakeexe.exe".to_string(), "path/to/afakeexe.exe".to_string()));
 
         // Test with allow_missing
         let args = Args {
