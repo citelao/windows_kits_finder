@@ -41,3 +41,29 @@ pub fn get_kit_bin_dirs(kit_dir: PathBuf) -> Vec<PathBuf> {
 
     bin_dirs
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_finds_bin_dirs() {
+        // - kit
+        //     - 10
+        //         - bin
+        //             - 10.0.19041.0
+        //             - 10.0.22000.0
+        //                 - x64
+        //                     - accevent.exe
+        let temp_kit_dir = assert_fs::TempDir::new().unwrap();
+        let bin_dir = temp_kit_dir.join("10").join("bin");
+        std::fs::create_dir_all(bin_dir.join("10.0.19041.0")).unwrap();
+        std::fs::create_dir_all(bin_dir.join("10.0.22000.0").join("x64")).unwrap();
+        let bin_dirs = get_kit_bin_dirs(temp_kit_dir.path().to_path_buf());
+
+        // We expect two directories: 10.0.19041.0 and 10.0.22000.0, in that order.
+        assert_eq!(bin_dirs.len(), 2);
+        assert_eq!(bin_dirs[0].file_name().unwrap(), "10.0.19041.0");
+        assert_eq!(bin_dirs[1].file_name().unwrap(), "10.0.22000.0");
+    }
+}
