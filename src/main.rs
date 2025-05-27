@@ -40,7 +40,10 @@ enum Commands {
     },
 
     // List all available Windows Kits
-    Kits,
+    Bin {
+        #[arg(long)]
+        list: bool,
+    },
 }
 
 #[derive(Args, Debug)]
@@ -161,18 +164,34 @@ fn do_it(args: CliArgs) -> Result<(), OurError> {
     };
 
     match args.command {
-        Commands::Kits => {
-            // Write all bin_dirs in reverse order
-            println!("Available Windows Kits:");
-            for bin_dir in bin_dirs.iter().rev() {
-                let kit_name = bin_dir.file_name().unwrap().to_string_lossy();
-                let is_default = if bin_dir == bin_dir_to_use {
-                    "(default)".to_string().dimmed()
-                } else {
-                    "".to_string().into()
-                };
-                println!(" - {} {}", kit_name, is_default);
+        Commands::Bin { list } => {
+            if list {
+                // Write all bin_dirs in reverse order
+                println!("Available Windows Kits:");
+                for bin_dir in bin_dirs.iter().rev() {
+                    let kit_name = bin_dir.file_name().unwrap().to_string_lossy();
+                    let is_default = if bin_dir == bin_dir_to_use {
+                        "(default)".to_string().dimmed()
+                    } else {
+                        "".to_string().into()
+                    };
+                    println!(" - {} {}", kit_name, is_default);
+                }
+                return Ok(());
             }
+
+            // Otherwise, just print the current bin directory
+            let path = bin_dir_to_use.join(architecture.clone());
+            if !path.exists() {
+                // TODO: error
+                panic!(
+                    "The bin directory for the current architecture ({}) does not exist: {}",
+                    architecture,
+                    path.display()
+                );
+            }
+
+            println!("{}", path.display());
         }
         Commands::Tool {
             subargs,
