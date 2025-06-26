@@ -66,6 +66,12 @@ enum KnownBinary {
     Inspect,
 
     MakePri,
+
+    // Not self-contained; to run externally, you also need:
+    //
+    // - Microsoft.Windows.Build.Appx.AppxPackaging.dll.manifest
+    // - Microsoft.Windows.Build.Appx.OpcServices.dll.manifest
+    // - opcservices.dll
     MakeAppx,
 
     Custom(String),
