@@ -66,6 +66,7 @@ enum KnownBinary {
     Inspect,
 
     MakePri,
+    MakeAppx,
 
     Custom(String),
 }
@@ -76,6 +77,7 @@ impl KnownBinary {
             KnownBinary::Accevent => "accevent.exe".to_string(),
             KnownBinary::Inspect => "inspect.exe".to_string(),
             KnownBinary::MakePri => "makepri.exe".to_string(),
+            KnownBinary::MakeAppx => "makeappx.exe".to_string(),
             KnownBinary::Custom(s) => s.clone(),
         }
     }
@@ -85,6 +87,7 @@ impl KnownBinary {
             KnownBinary::Accevent => "accevent.exe".to_string(),
             KnownBinary::Inspect => "inspect.exe".to_string(),
             KnownBinary::MakePri => "makepri.exe".to_string(),
+            KnownBinary::MakeAppx => "makeappx.exe".to_string(),
             KnownBinary::Custom(s) => s.clone(),
         }
     }
@@ -96,6 +99,7 @@ impl ValueEnum for KnownBinary {
             KnownBinary::Accevent,
             KnownBinary::Inspect,
             KnownBinary::MakePri,
+            KnownBinary::MakeAppx,
         ]
     }
 
@@ -104,6 +108,7 @@ impl ValueEnum for KnownBinary {
             KnownBinary::Accevent => Some(PossibleValue::new("accevent")),
             KnownBinary::Inspect => Some(PossibleValue::new("inspect")),
             KnownBinary::MakePri => Some(PossibleValue::new("makepri")),
+            KnownBinary::MakeAppx => Some(PossibleValue::new("makeappx")),
             _ => None,
         }
     }
