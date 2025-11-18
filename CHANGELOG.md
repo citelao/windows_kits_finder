@@ -1,6 +1,8 @@
 # CHANGELOG
 
-# Unreleased
+<!-- next-header -->
+
+# UNRELEASED
 * new: Added CHANGELOG
 
 # 0.1.0
