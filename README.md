@@ -49,6 +49,17 @@ cargo check
 cargo fmt
 ```
 
+### Publishing a new version
+
+```bash
+# Initial setup
+cargo install cargo-release
+
+cargo release patch # or minor or major
+# ... dry-run
+cargo release patch --execute
+```
+
 ## TODO
 
 * [X] License
