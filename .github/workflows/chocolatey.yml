@@ -1,0 +1,113 @@
+name: Publish to Chocolatey
+
+on:
+  release:
+    types: [published]
+
+env:
+  PACKAGE_NAME: winky
+
+jobs:
+  chocolatey:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Get release info
+        id: release
+        run: |
+          $version = "${{ github.event.release.tag_name }}".TrimStart('v')
+          $downloadUrl = "${{ github.event.release.html_url }}".Replace('/tag/', '/download/') + "/winky.exe"
+          
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "download_url=$downloadUrl" >> $env:GITHUB_OUTPUT
+          
+          Write-Host "Version: $version"
+          Write-Host "Download URL: $downloadUrl"
+      
+      - name: Download release asset and get checksum
+        id: checksum
+        run: |
+          $downloadUrl = "${{ steps.release.outputs.download_url }}"
+          $tempFile = "winky-temp.exe"
+          
+          Write-Host "Downloading from: $downloadUrl"
+          Invoke-WebRequest -Uri $downloadUrl -OutFile $tempFile
+          
+          $checksum = (Get-FileHash -Path $tempFile -Algorithm SHA256).Hash
+          echo "checksum=$checksum" >> $env:GITHUB_OUTPUT
+          
+          Write-Host "SHA256: $checksum"
+          Remove-Item $tempFile
+      
+      - name: Update Chocolatey package files
+        run: |
+          $version = "${{ steps.release.outputs.version }}"
+          $downloadUrl = "${{ steps.release.outputs.download_url }}"
+          $checksum = "${{ steps.checksum.outputs.checksum }}"
+          
+          # Update nuspec version
+          $nuspecPath = "chocolatey/winky.nuspec"
+          $nuspecContent = Get-Content $nuspecPath -Raw
+          $nuspecContent = $nuspecContent -replace '<version>[\d\.]+</version>', "<version>$version</version>"
+          $nuspecContent = $nuspecContent -replace 'releases/tag/v[\d\.]+', "releases/tag/v$version"
+          Set-Content -Path $nuspecPath -Value $nuspecContent
+          
+          # Update install script
+          $installPath = "chocolatey/tools/chocolateyinstall.ps1"
+          $installContent = Get-Content $installPath -Raw
+          $installContent = $installContent -replace '\$url64 = ''[^'']+''', "`$url64 = '$downloadUrl'"
+          $installContent = $installContent -replace 'checksum64\s*=\s*''[^'']*''', "checksum64    = '$checksum'"
+          Set-Content -Path $installPath -Value $installContent
+          
+          Write-Host "Updated package files:"
+          Write-Host "- Version: $version"
+          Write-Host "- URL: $downloadUrl"
+          Write-Host "- Checksum: $checksum"
+      
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      
+      - name: Pack Chocolatey package
+        run: |
+          cd chocolatey
+          choco pack winky.nuspec
+          
+          $nupkgFile = Get-ChildItem -Filter "*.nupkg" | Select-Object -First 1
+          Write-Host "Created package: $($nupkgFile.Name)"
+          
+          # Move to root for upload artifact
+          Move-Item $nupkgFile.Name "../$($nupkgFile.Name)"
+      
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chocolatey-package
+          path: "*.nupkg"
+      
+      - name: Publish to Chocolatey (if API key is set)
+        if: ${{ secrets.CHOCOLATEY_API_KEY != '' }}
+        run: |
+          $nupkgFile = Get-ChildItem -Filter "*.nupkg" | Select-Object -First 1
+          Write-Host "Publishing $($nupkgFile.Name) to Chocolatey..."
+          
+          choco push $nupkgFile.Name --source https://push.chocolatey.org/ --api-key ${{ secrets.CHOCOLATEY_API_KEY }}
+          
+          Write-Host "Successfully published to Chocolatey!"
+      
+      - name: Instructions if no API key
+        if: ${{ secrets.CHOCOLATEY_API_KEY == '' }}
+        run: |
+          Write-Host "🔑 Chocolatey API key not found in secrets."
+          Write-Host ""
+          Write-Host "To enable automatic publishing:"
+          Write-Host "1. Get your API key from: https://community.chocolatey.org/account"
+          Write-Host "2. Add it as 'CHOCOLATEY_API_KEY' in your repository secrets"
+          Write-Host "3. The next release will automatically publish to Chocolatey"
+          Write-Host ""
+          Write-Host "Alternatively, you can manually upload the generated .nupkg file."

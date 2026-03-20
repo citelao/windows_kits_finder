@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "Cargo.toml", "Cargo.lock", "src/**" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Check if version changed
+        id: version
+        run: |
+          $currentVersion = Select-String -Path "Cargo.toml" -Pattern '^version = "([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+          echo "version=$currentVersion" >> $env:GITHUB_OUTPUT
+          
+          # Check if version changed in this commit
+          $changes = git diff HEAD~1 HEAD --name-only
+          if ($changes -contains "Cargo.toml") {
+            $prevVersion = git show HEAD~1:Cargo.toml | Select-String -Pattern '^version = "([^"]+)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+            if ($currentVersion -ne $prevVersion) {
+              echo "changed=true" >> $env:GITHUB_OUTPUT
+              Write-Host "Version changed from $prevVersion to $currentVersion"
+            } else {
+              echo "changed=false" >> $env:GITHUB_OUTPUT
+              Write-Host "Version unchanged: $currentVersion"
+            }
+          } else {
+            echo "changed=false" >> $env:GITHUB_OUTPUT
+            Write-Host "Cargo.toml not modified in this commit"
+          }
+      
+      - name: Build release binary
+        if: steps.version.outputs.changed == 'true'
+        run: cargo build --release
+      
+      - name: Update Chocolatey package version
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          
+          # Update nuspec version
+          $nuspecPath = "chocolatey/winky.nuspec"
+          if (Test-Path $nuspecPath) {
+            $nuspecContent = Get-Content $nuspecPath -Raw
+            $nuspecContent = $nuspecContent -replace '<version>[\d\.]+</version>', "<version>$version</version>"
+            $nuspecContent = $nuspecContent -replace 'releases/tag/v[\d\.]+', "releases/tag/v$version"
+            Set-Content -Path $nuspecPath -Value $nuspecContent
+            
+            Write-Host "Updated Chocolatey nuspec to version $version"
+            
+            # Commit the updated Chocolatey files
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add chocolatey/winky.nuspec
+            git commit -m "Update Chocolatey package to v$version" || Write-Host "No Chocolatey changes to commit"
+          }
+      
+      - name: Create GitHub Release
+        if: steps.version.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          files: target/release/winky.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          body: |
+            ## winky v${{ steps.version.outputs.version }}
+            
+            Windows Kit binary finder tool.
+            
+            ### Installation Options
+            
+            **Direct Download**: Download `winky.exe` from this release
+            
+            **Chocolatey**: `choco install winky` (will be available shortly after release)
+            
+            **Cargo**: `cargo install --git https://github.com/citelao/winky`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

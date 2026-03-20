@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>winky</id>
+    <version>0.1.1</version>
+    <packageSourceUrl>https://github.com/citelao/winky/tree/main/chocolatey</packageSourceUrl>
+    <owners>citelao</owners>
+    <title>winky</title>
+    <authors>Benjamin Stolovitz</authors>
+    <projectUrl>https://github.com/citelao/winky</projectUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/citelao/winky/assets/icon.png</iconUrl>
+    <copyright>2024 Benjamin Stolovitz</copyright>
+    <licenseUrl>https://github.com/citelao/winky/blob/main/LICENSE.txt</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/citelao/winky</projectSourceUrl>
+    <docsUrl>https://github.com/citelao/winky#readme</docsUrl>
+    <bugTrackerUrl>https://github.com/citelao/winky/issues</bugTrackerUrl>
+    <tags>winky windows-sdk windows-kits cli developer-tools</tags>
+    <summary>A simple CLI for accessing tools from Windows Kits (Windows SDKs)</summary>
+    <description><![CDATA[
+# winky - Windows Kit binary finder
+
+`winky` is a simple tool to find binaries in Windows Kits, since it's a bit annoying.
+
+## What is this?
+
+Windows Kits (aka the Windows SDK) have loads of useful tools for the aspiring Windows developer. For example, `inspect.exe` and `acceevent.exe` are fantastic accessibility testing tools, and `makepri.exe` can generate .PRI files for XAML apps.
+
+Unfortunately, the paths can be annoying. For example:
+```
+C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\accevent.exe
+```
+
+And they change with new builds of Windows. It's a tiny problem that deserves a tiny solution.
+
+Enter `winky`.
+
+## Usage
+
+```
+# Get the path to accevent from the latest kit
+winky tool accevent
+
+# Get the base bin path from the latest kit
+winky bin
+
+# List all available kits
+winky bin --list
+```
+]]></description>
+    <releaseNotes>https://github.com/citelao/winky/releases/tag/v0.1.1</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

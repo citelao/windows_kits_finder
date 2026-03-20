@@ -33,7 +33,18 @@ winky bin --list
 
 ## Installation
 
-(Not yet published; build locally & add to your path?)
+### Chocolatey (Recommended)
+```powershell
+choco install winky
+```
+
+### Direct Download
+Download the latest `winky.exe` from the [Releases page](https://github.com/citelao/winky/releases) and add it to your PATH.
+
+### Build from Source
+```bash
+cargo install --git https://github.com/citelao/winky
+```
 
 ## Contributing
 
